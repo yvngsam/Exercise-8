@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа №8 — Форма обратной связи</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #f2f4f8;
+            color: #222;
+        }
+
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .page h1 {
+            margin-bottom: 15px;
+            font-size: 34px;
+        }
+
+        .page p {
+            max-width: 550px;
+            margin-bottom: 25px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .open-button {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            background: #286bc4;
+            color: #fff;
+            font-size: 17px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .open-button:hover {
+            background: #1d5197;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.65);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            position: relative;
+            width: 100%;
+            max-width: 520px;
+            max-height: calc(100vh - 30px);
+            max-height: calc(100dvh - 30px);
+            overflow-y: auto;
+            padding: 28px;
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal h2 {
+            margin: 0 35px 20px 0;
+            font-size: 26px;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 16px;
+            right: 18px;
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 50%;
+            background: #eee;
+            color: #333;
+            font-size: 23px;
+            cursor: pointer;
+        }
+
+        .close-button:hover {
+            background: #ddd;
+        }
+
+        .form-group {
+            margin-bottom: 13px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            display: block;
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            font-family: Arial, sans-serif;
+            font-size: 15px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #286bc4;
+            box-shadow: 0 0 0 2px rgba(40, 107, 196, 0.12);
+        }
+
+        .form-group textarea {
+            min-height: 85px;
+            resize: vertical;
+        }
+
+        .consent {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            margin: 16px 0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .consent input {
+            flex-shrink: 0;
+            width: 17px;
+            height: 17px;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 7px;
+            background: #286bc4;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .submit-button:hover:not(:disabled) {
+            background: #1d5197;
+        }
+
+        .submit-button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .form-message {
+            display: none;
+            margin-top: 14px;
+            padding: 11px;
+            border-radius: 7px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .form-message.success {
+            display: block;
+            background: #e5f6e9;
+            color: #17652b;
+        }
+
+        .form-message.error {
+            display: block;
+            background: #fde8e8;
+            color: #a32121;
+        }
+
+        @media (max-width: 600px) {
+            .page {
+                padding: 20px 15px;
+            }
+
+            .page h1 {
+                font-size: 27px;
+            }
+
+            .modal-overlay {
+                padding: 8px;
+            }
+
+            .modal {
+                max-height: calc(100vh - 16px);
+                max-height: calc(100dvh - 16px);
+                padding: 14px;
+                border-radius: 10px;
+            }
+
+            .modal h2 {
+                margin-bottom: 12px;
+                font-size: 21px;
+            }
+
+            .close-button {
+                top: 10px;
+                right: 10px;
+            }
+
+            .form-group {
+                margin-bottom: 9px;
+            }
+
+            .form-group label {
+                margin-bottom: 4px;
+                font-size: 13px;
+            }
+
+            .form-group input {
+                padding: 9px 10px;
+                font-size: 14px;
+            }
+
+            .form-group textarea {
+                min-height: 48px;
+                padding: 9px 10px;
+                font-size: 14px;
+            }
+
+            .consent {
+                margin: 8px 0;
+                font-size: 12px;
+            }
+
+            .submit-button {
+                padding: 11px;
+                font-size: 15px;
+            }
+
+            .form-message {
+                margin-top: 9px;
+                padding: 8px;
+                font-size: 13px;
+            }
+        }
+
+        @media (max-height: 600px) and (max-width: 600px) {
+            .modal {
+                padding: 12px;
+            }
+
+            .modal h2 {
+                margin-bottom: 8px;
+                font-size: 19px;
+            }
+
+            .form-group {
+                margin-bottom: 6px;
+            }
+
+            .form-group input {
+                padding: 7px 9px;
+            }
+
+            .form-group textarea {
+                min-height: 42px;
+                padding: 7px 9px;
+            }
+
+            .consent {
+                margin: 7px 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="page">
+        <h1>Свяжитесь с нами</h1>
+
+        <p>
+            Если у вас есть вопросы или предложения,
+            заполните форму обратной связи.
+            Мы обязательно рассмотрим ваше сообщение.
+        </p>
+
+        <button
+            class="open-button"
+            id="openModal"
+            type="button"
+        >
+            Открыть форму обратной связи
+        </button>
+    </main>
+
+    <div
+        class="modal-overlay"
+        id="modalOverlay"
+        aria-hidden="true"
+    >
+        <section
+            class="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="formTitle"
+        >
+
+            <button
+                class="close-button"
+                id="closeModal"
+                type="button"
+                aria-label="Закрыть форму"
+            >
+                &times;
+            </button>
+
+            <h2 id="formTitle">Форма обратной связи</h2>
+
+            <form id="contactForm">
+
+                <div class="form-group">
+                    <label for="fullname">ФИО *</label>
+
+                    <input
+                        type="text"
+                        id="fullname"
+                        name="fullname"
+                        placeholder="Введите ваше ФИО"
+                        autocomplete="name"
+                        pattern="[А-Яа-яЁёA-Za-z]+([ -][А-Яа-яЁёA-Za-z]+){1,2}"
+                        title="Введите фамилию, имя и отчество буквами. Допускаются пробелы и дефисы."
+                        maxlength="100"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email *</label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="example@mail.com"
+                        autocomplete="email"
+                        maxlength="254"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Телефон *</label>
+
+                    <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        placeholder="79991234567"
+                        inputmode="numeric"
+                        pattern="[0-9]{11}"
+                        maxlength="11"
+                        minlength="11"
+                        title="Введите ровно 11 цифр без пробелов и знаков."
+                        autocomplete="tel"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="organization">Организация</label>
+
+                    <input
+                        type="text"
+                        id="organization"
+                        name="organization"
+                        placeholder="Название организации"
+                        autocomplete="organization"
+                        maxlength="150"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Сообщение *</label>
+
+                    <textarea
+                        id="message"
+                        name="message"
+                        placeholder="Введите ваше сообщение"
+                        minlength="2"
+                        maxlength="2000"
+                        required
+                    ></textarea>
+                </div>
+
+                <label class="consent" for="consent">
+
+                    <input
+                        type="checkbox"
+                        id="consent"
+                        name="consent"
+                        required
+                    >
+
+                    <span>
+                        Я согласен на обработку персональных данных
+                        в соответствии с политикой конфиденциальности.
+                    </span>
+
+                </label>
+
+                <button
+                    class="submit-button"
+                    id="submitButton"
+                    type="submit"
+                >
+                    Отправить
+                </button>
+
+                <div
+                    class="form-message"
+                    id="formMessage"
+                    role="status"
+                    aria-live="polite"
+                ></div>
+
+            </form>
+        </section>
+    </div>
+        <script>
+        const openButton = document.getElementById('openModal');
+        const closeButton = document.getElementById('closeModal');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const contactForm = document.getElementById('contactForm');
+        const submitButton = document.getElementById('submitButton');
+        const formMessage = document.getElementById('formMessage');
+
+        const STORAGE_KEY = 'contactFormData';
+        const FORM_ENDPOINT = 'https://formspree.io/f/xkjrrplz';
+
+        // Открытие формы.
+        function showModal() {
+            modalOverlay.classList.add('active');
+            modalOverlay.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+            closeButton.focus();
+        }
+
+        // Закрытие формы.
+        function hideModal() {
+            modalOverlay.classList.remove('active');
+            modalOverlay.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+            openButton.focus();
+        }
+
+        // Открытие формы с изменением URL.
+        function openModal() {
+            if (modalOverlay.classList.contains('active')) {
+                return;
+            }
+
+            history.pushState(
+                { contactModal: true },
+                '',
+                window.location.pathname + window.location.search + '#contact'
+            );
+
+            showModal();
+        }
+
+        // Закрытие формы через History API.
+        function closeModal() {
+            if (history.state && history.state.contactModal) {
+                history.back();
+            } else {
+                hideModal();
+            }
+        }
+
+        openButton.addEventListener('click', openModal);
+
+        closeButton.addEventListener('click', closeModal);
+
+        // Закрытие при клике на затемнённую область.
+        modalOverlay.addEventListener('click', function (event) {
+            if (event.target === modalOverlay) {
+                closeModal();
+            }
+        });
+
+        // Поддержка кнопок "Назад" и "Вперёд".
+        window.addEventListener('popstate', function (event) {
+            if (event.state && event.state.contactModal) {
+                showModal();
+            } else {
+                hideModal();
+            }
+        });
+
+        // Закрытие клавишей Escape.
+        document.addEventListener('keydown', function (event) {
+            if (
+                event.key === 'Escape' &&
+                modalOverlay.classList.contains('active')
+            ) {
+                closeModal();
+            }
+        });
+
+        // Получение полей формы.
+        const fullnameInput = contactForm.elements.fullname;
+        const emailInput = contactForm.elements.email;
+        const phoneInput = contactForm.elements.phone;
+        const organizationInput = contactForm.elements.organization;
+        const messageInput = contactForm.elements.message;
+
+        // Сохранение данных в LocalStorage.
+        function saveFormData() {
+            const formData = {
+                fullname: fullnameInput.value,
+                email: emailInput.value,
+                phone: phoneInput.value,
+                organization: organizationInput.value,
+                message: messageInput.value,
+                consent: contactForm.elements.consent.checked
+            };
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(formData)
+            );
+        }
+
+        // Восстановление данных из LocalStorage.
+        function restoreFormData() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+
+            if (!savedData) {
+                return;
+            }
+
+            try {
+                const formData = JSON.parse(savedData);
+
+                fullnameInput.value = formData.fullname || '';
+                emailInput.value = formData.email || '';
+                phoneInput.value = formData.phone || '';
+                organizationInput.value = formData.organization || '';
+                messageInput.value = formData.message || '';
+
+                contactForm.elements.consent.checked =
+                    Boolean(formData.consent);
+
+            } catch (error) {
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        }
+
+        // Проверка правильности заполнения полей.
+        function validateFormFields() {
+            const fullname = fullnameInput.value.trim();
+            const organization = organizationInput.value;
+            const message = messageInput.value.trim();
+
+            // Проверка ФИО.
+            fullnameInput.setCustomValidity(
+                fullname !== '' &&
+                !/^[А-Яа-яЁёA-Za-z]+(?:[ -][А-Яа-яЁёA-Za-z]+){1,2}$/.test(fullname)
+                    ? 'Введите ФИО: фамилию, имя и отчество буквами.'
+                    : ''
+            );
+
+            // Проверка телефона.
+            phoneInput.setCustomValidity(
+                phoneInput.value !== '' &&
+                !/^[0-9]{11}$/.test(phoneInput.value)
+                    ? 'Номер телефона должен содержать ровно 11 цифр.'
+                    : ''
+            );
+
+            // Проверка организации.
+            organizationInput.setCustomValidity(
+                organization !== '' && organization.trim() === ''
+                    ? 'Поле организации не может состоять только из пробелов.'
+                    : ''
+            );
+
+            // Проверка сообщения.
+            messageInput.setCustomValidity(
+                message === ''
+                    ? 'Введите сообщение. Поле не может быть пустым.'
+                    : message.length < 2
+                        ? 'Сообщение должно содержать не менее 2 символов.'
+                        : ''
+            );
+
+            // Проверка Email.
+            emailInput.setCustomValidity(
+                emailInput.value.trim() === ''
+                    ? 'Введите адрес электронной почты.'
+                    : ''
+            );
+        }
+
+        // В телефоне автоматически удаляются все символы,
+        // кроме цифр. Максимальная длина — 11 цифр.
+        phoneInput.addEventListener('input', function () {
+            const digits = phoneInput.value
+                .replace(/[^0-9]/g, '')
+                .slice(0, 11);
+
+            if (phoneInput.value !== digits) {
+                phoneInput.value = digits;
+            }
+
+            validateFormFields();
+            saveFormData();
+        });
+
+        // Удаление лишних пробелов в ФИО.
+        fullnameInput.addEventListener('blur', function () {
+            fullnameInput.value = fullnameInput.value
+                .trim()
+                .replace(/\s+/g, ' ');
+
+            validateFormFields();
+            saveFormData();
+        });
+
+        // Удаление пробелов по краям Email.
+        emailInput.addEventListener('blur', function () {
+            emailInput.value = emailInput.value.trim();
+
+            validateFormFields();
+            saveFormData();
+        });
+
+        // Проверка и сохранение при изменении полей.
+        contactForm.addEventListener('input', function () {
+            validateFormFields();
+            saveFormData();
+        });
+
+        contactForm.addEventListener('change', function () {
+            validateFormFields();
+            saveFormData();
+        });
+
+        // Вывод сообщения пользователю.
+        function showMessage(message, type) {
+            formMessage.textContent = message;
+            formMessage.className = 'form-message ' + type;
+        }
+
+        // Отправка формы без перезагрузки страницы.
+        contactForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            // Проверяем правильность заполнения.
+            validateFormFields();
+
+            if (!contactForm.checkValidity()) {
+    showMessage(
+        'Ошибка! Проверьте правильность заполнения всех полей.',
+        'error'
+    );
+
+    contactForm.reportValidity();
+    return;
+}
+
+            // Проверка подключения Formspree.
+            if (FORM_ENDPOINT.includes('YOUR_FORM_ID')) {
+                showMessage(
+                    'Сначала подключите форму Formspree.',
+                    'error'
+                );
+
+                return;
+            }
+
+            // Подготовка данных.
+            const formData = {
+                fullname: fullnameInput.value.trim(),
+                email: emailInput.value.trim(),
+                phone: phoneInput.value.trim(),
+                organization: organizationInput.value.trim(),
+                message: messageInput.value.trim(),
+                consent: contactForm.elements.consent.checked
+            };
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'Отправка...';
+
+            formMessage.className = 'form-message';
+
+            try {
+                // Отправка данных через Fetch API.
+                const response = await fetch(FORM_ENDPOINT, {
+                    method: 'POST',
+
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка отправки данных');
+                }
+
+                // Сообщение об успешной отправке.
+                showMessage(
+                    'Ваше сообщение успешно отправлено! Спасибо за обращение.',
+                    'success'
+                );
+
+                // Очистка формы и LocalStorage.
+                contactForm.reset();
+                localStorage.removeItem(STORAGE_KEY);
+
+            } catch (error) {
+
+                // Сообщение об ошибке.
+                showMessage(
+                    'Не удалось отправить сообщение. Проверьте подключение к интернету и попробуйте ещё раз.',
+                    'error'
+                );
+
+                // Сохраняем данные, если отправка не удалась.
+                saveFormData();
+
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Отправить';
+            }
+        });
+
+        // Восстановление данных при загрузке страницы.
+        restoreFormData();
+
+        // Первоначальная проверка полей.
+        validateFormFields();
+
+    </script>
+
+</body>
+</html>
